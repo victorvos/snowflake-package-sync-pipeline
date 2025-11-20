@@ -1,0 +1,39 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - requirements.txt
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  python.version: '3.8'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    python sync_snowflake_packages.py \
+      --stage @$(SNOWFLAKE_DATABASE).$(SNOWFLAKE_SCHEMA).PACKAGES_STAGE \
+      --proget-url "$(PROGET_URL)"
+  displayName: 'Sync Packages to Snowflake'
+  env:
+    SNOWFLAKE_ACCOUNT: $(SNOWFLAKE_ACCOUNT)
+    SNOWFLAKE_USER: $(SNOWFLAKE_USER)
+    SNOWFLAKE_PASSWORD: $(SNOWFLAKE_PASSWORD)
+    SNOWFLAKE_ROLE: $(SNOWFLAKE_ROLE)
+    SNOWFLAKE_WAREHOUSE: $(SNOWFLAKE_WAREHOUSE)
+    SNOWFLAKE_DATABASE: $(SNOWFLAKE_DATABASE)
+    SNOWFLAKE_SCHEMA: $(SNOWFLAKE_SCHEMA)
+
