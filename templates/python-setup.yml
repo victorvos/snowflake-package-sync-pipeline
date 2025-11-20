@@ -1,0 +1,41 @@
+parameters:
+  - name: pythonVersion
+    type: string
+    default: '3.8'
+  - name: requirementsFile
+    type: string
+    default: 'requirements.txt'
+  - name: venvDir
+    type: string
+    default: '.venv'
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '${{ parameters.pythonVersion }}'
+    displayName: 'Use Python ${{ parameters.pythonVersion }}'
+
+  - script: |
+      python -m venv ${{ parameters.venvDir }}
+      source ${{ parameters.venvDir }}/bin/activate
+      python -m pip install --upgrade pip
+    displayName: 'Create virtual environment'
+
+  - script: |
+      source ${{ parameters.venvDir }}/bin/activate
+      
+      # Check if PROGET_URL is set and configure pip or just use it
+      if [ -n "$(PROGET_URL)" ]; then
+        echo "Configuring pip to use ProGet: $(PROGET_URL)"
+        # Option 1: Set index-url in pip.conf or environment variable
+        # export PIP_INDEX_URL=$(PROGET_URL)
+        
+        # Option 2: Install with --index-url directly (safer if URL contains creds)
+        pip install -r ${{ parameters.requirementsFile }} --index-url $(PROGET_URL)
+      else
+        echo "PROGET_URL not set, using default pip index"
+        pip install -r ${{ parameters.requirementsFile }}
+      fi
+    displayName: 'Install dependencies from ${{ parameters.requirementsFile }}'
+    env:
+      PROGET_URL: $(PROGET_URL)

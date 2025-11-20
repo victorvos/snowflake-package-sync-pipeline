@@ -5,25 +5,25 @@ trigger:
   paths:
     include:
     - requirements.txt
+    - azure-pipelines.yml
+    - templates/*.yml
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
   python.version: '3.8'
+  venv.dir: '.venv'
 
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+- template: templates/python-setup.yml
+  parameters:
+    pythonVersion: '$(python.version)'
+    requirementsFile: 'requirements.txt'
+    venvDir: '$(venv.dir)'
 
 - script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install dependencies'
-
-- script: |
+    source $(venv.dir)/bin/activate
     python sync_snowflake_packages.py \
       --stage @$(SNOWFLAKE_DATABASE).$(SNOWFLAKE_SCHEMA).PACKAGES_STAGE \
       --proget-url "$(PROGET_URL)"
@@ -36,4 +36,6 @@ steps:
     SNOWFLAKE_WAREHOUSE: $(SNOWFLAKE_WAREHOUSE)
     SNOWFLAKE_DATABASE: $(SNOWFLAKE_DATABASE)
     SNOWFLAKE_SCHEMA: $(SNOWFLAKE_SCHEMA)
+    PROGET_URL: $(PROGET_URL)
+
 
