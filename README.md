@@ -6,6 +6,7 @@ A comprehensive tool for automating the synchronization of Python packages from 
 - [Overview](#overview)
 - [Setup](#setup)
 - [Usage](#usage)
+- [Development](#development)
 - [API Reference](#api-reference)
 - [CI/CD Integration](#cicd-integration)
 
@@ -80,6 +81,18 @@ python sync_snowflake_packages.py \
     --stage @MY_DB.MY_SCHEMA.PROD_STAGE \
     --proget-url https://proget.example.com/pypi/my-feed/simple \
     --zip-name release_v1.zip
+```
+
+## Development
+
+### Testing
+
+This project uses `unittest` for testing. The tests mock external dependencies (Snowflake, ProGet) to ensure the logic can be verified without a live environment.
+
+To run the tests:
+
+```bash
+python3 -m unittest discover tests
 ```
 
 ## API Reference
