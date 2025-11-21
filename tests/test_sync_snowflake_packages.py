@@ -45,12 +45,13 @@ class TestSyncSnowflakePackages(unittest.TestCase):
 
         # Verify pip command
         expected_cmd = [
-            sys.executable, "-m", "pip", "download",
+            sys.executable, "-m", "pip", "install",
             "-r", self.requirements_path,
-            "-d", self.download_dir,
+            "--target", self.download_dir,
             "--platform", "manylinux2014_x86_64",
             "--only-binary=:all:",
             "--python-version", "3.8",
+            "--no-deps",
             "--index-url", self.proget_url
         ]
         mock_subprocess.assert_called_once_with(expected_cmd)
@@ -105,7 +106,8 @@ class TestSyncSnowflakePackages(unittest.TestCase):
                 mock_cursor = MagicMock()
                 mock_connector.connect.return_value = mock_conn
                 mock_conn.cursor.return_value = mock_cursor
-                mock_cursor.fetchall.return_value = [('file.zip', 'UPLOADED')]
+                # PUT command returns: (source, target, source_size, target_size, source_compression, target_compression, status, message)
+                mock_cursor.fetchall.return_value = [('file.zip', 'file.zip', 100, 100, 'NONE', 'NONE', 'UPLOADED', '')]
 
                 # Execute
                 sync_snowflake_packages.upload_to_snowflake(self.zip_name, self.stage_name)

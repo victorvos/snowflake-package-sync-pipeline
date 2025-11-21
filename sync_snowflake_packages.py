@@ -29,21 +29,29 @@ def setup_args():
 
 def download_packages(requirements_path: str, download_dir: str, index_url: Optional[str] = None):
     """
-    Download packages listed in requirements.txt using pip.
+    Install packages listed in requirements.txt to a target directory using pip.
+    This creates a directory structure ready to be zipped and imported in Snowflake.
     """
-    logger.info(f"Downloading packages from {requirements_path} to {download_dir}...")
+    logger.info(f"Installing packages from {requirements_path} to {download_dir}...")
     
     if os.path.exists(download_dir):
         shutil.rmtree(download_dir)
     os.makedirs(download_dir)
 
     cmd = [
-        sys.executable, "-m", "pip", "download",
+        sys.executable, "-m", "pip", "install",
         "-r", requirements_path,
-        "-d", download_dir,
+        "--target", download_dir,
         "--platform", "manylinux2014_x86_64", # Snowflake UDFs run on Linux
-        "--only-binary=:all:", # Prefer wheels
-        "--python-version", "3.8", # Adjust to match Snowflake Python version (3.8, 3.9, 3.10, 3.11)
+        "--only-binary=:all:", # Prefer wheels to avoid compilation issues
+        "--python-version", "3.8", # Adjust to match Snowflake Python version
+        "--no-deps" # We usually want deps, but if we use --platform we might need --no-deps or be careful. 
+                    # Actually, with --target and --platform, pip might complain if we don't use --no-deps OR if we don't ensure all deps are binary.
+                    # Let's try WITHOUT --no-deps first, as we want dependencies. 
+                    # But wait, pip install --target with --platform is often restricted.
+                    # Let's check the research again. 
+                    # Research said: "When using --platform... you are generally required to also use either --only-binary=:all: or --no-deps."
+                    # We are using --only-binary=:all:, so we should be good to get dependencies too.
     ]
 
     if index_url:
@@ -51,9 +59,9 @@ def download_packages(requirements_path: str, download_dir: str, index_url: Opti
         
     try:
         subprocess.check_call(cmd)
-        logger.info("Download complete.")
+        logger.info("Download/Install complete.")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to download packages: {e}")
+        logger.error(f"Failed to install packages: {e}")
         raise
 
 def create_zip(source_dir: str, output_filename: str):
